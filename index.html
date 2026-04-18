@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hobby Tracker 🌱</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #F5F4F0;
+      --surface: #FFFFFF;
+      --border: #E8E5DE;
+      --text: #1C1A17;
+      --text-muted: #8A857C;
+      --text-light: #C4BFB6;
+      --radius: 20px;
+      --radius-sm: 14px;
+      --shadow-sm: 0 1px 6px rgba(0,0,0,0.06);
+    }
+
+    html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    button { font-family: inherit; cursor: pointer; }
+
+    /* ── App shell ── */
+    .app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 100px; }
+
+    /* ── Header ── */
+    .header { background: var(--bg); padding: 24px 20px 0; position: sticky; top: 0; z-index: 20; }
+    .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .app-title { font-size: 30px; font-weight: 800; letter-spacing: -0.8px; }
+
+    .view-tabs { display: flex; background: var(--surface); border-radius: 11px; padding: 3px; gap: 2px; box-shadow: var(--shadow-sm); }
+    .view-tab { background: none; border: none; padding: 6px 13px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-muted); transition: all 0.15s; }
+    .view-tab.active { background: var(--text); color: #fff; }
+
+    .date-nav { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
+    .nav-btn { background: none; border: none; font-size: 22px; line-height: 1; color: var(--text-muted); padding: 2px 8px; border-radius: 8px; transition: all 0.15s; }
+    .nav-btn:hover { background: var(--bg); color: var(--text); }
+
+    .date-display { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .date-text { font-size: 15px; font-weight: 700; }
+    .today-pill { background: none; border: 1.5px solid var(--border); color: var(--text-muted); font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 100px; transition: all 0.15s; }
+    .today-pill:hover { background: var(--text); color: #fff; border-color: var(--text); }
+
+    /* ── Main ── */
+    .main { padding: 0 16px; }
+
+    /* ── Empty state ── */
+    .empty-state { text-align: center; padding: 72px 24px; color: var(--text-muted); }
+    .empty-icon { font-size: 52px; margin-bottom: 18px; display: block; }
+    .empty-state h2 { font-size: 21px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .empty-state p { font-size: 15px; line-height: 1.5; }
+
+    /* ── Daily view ── */
+    .daily-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .hobby-row {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      box-shadow: var(--shadow-sm);
+      transition: opacity 0.2s;
+    }
+    .hobby-row.completed { opacity: 0.55; }
+
+    .check-btn {
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 2.5px solid var(--color, #ccc);
+      background: transparent; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .check-btn:not(:disabled):hover { transform: scale(1.1); }
+    .completed .check-btn { background: var(--color, #ccc); border-color: var(--color, #ccc); }
+    .check-btn:disabled { opacity: 0.3; cursor: default; }
+
+    .check-icon { color: #fff; font-size: 17px; font-weight: 700; line-height: 1; }
+
+    .hobby-emoji { font-size: 22px; line-height: 1; flex-shrink: 0; }
+    .hobby-name { font-size: 16px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .completed .hobby-name { text-decoration: line-through; color: var(--text-muted); }
+
+    .hobby-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+    .streak-badge { font-size: 12px; font-weight: 700; color: var(--text-muted); background: var(--bg); padding: 3px 8px; border-radius: 100px; white-space: nowrap; }
+
+    .note-btn { background: none; border: none; font-size: 17px; padding: 4px; border-radius: 8px; opacity: 0.4; transition: all 0.15s; line-height: 1; }
+    .note-btn:hover, .note-btn.has-note { opacity: 1; background: var(--bg); }
+
+    .delete-btn { background: none; border: none; font-size: 20px; line-height: 1; color: var(--text-light); padding: 2px 5px; border-radius: 6px; transition: all 0.15s; }
+    .delete-btn:hover { color: #ff4444; background: #fff0f0; }
+
+    /* ── Weekly view ── */
+    .weekly-view { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    .week-grid { display: grid; grid-template-columns: 110px repeat(7, 1fr); gap: 4px; }
+    .week-grid-header { margin-bottom: 6px; }
+
+    .week-day-header { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 0; }
+    .day-abbr { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+    .day-num-btn { width: 30px; height: 30px; border-radius: 50%; border: none; background: none; font-size: 14px; font-weight: 600; color: var(--text); transition: all 0.15s; }
+    .day-num-btn:hover { background: var(--border); }
+    .day-num-btn.today { background: var(--text); color: #fff; }
+
+    .week-hobby-row { display: grid; grid-template-columns: 110px repeat(7, 1fr); gap: 4px; align-items: center; background: var(--surface); border-radius: var(--radius-sm); padding: 10px 8px; margin-bottom: 8px; box-shadow: var(--shadow-sm); }
+    .week-hobby-label { display: flex; align-items: center; gap: 7px; padding-left: 4px; }
+    .week-hobby-emoji { font-size: 17px; line-height: 1; }
+    .week-hobby-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .week-cell { display: flex; align-items: center; justify-content: center; }
+    .week-dot { width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid var(--color, #ccc); background: none; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .week-dot:not(:disabled):hover { transform: scale(1.15); }
+    .week-dot.done { background: var(--color, #ccc); border-color: var(--color, #ccc); }
+    .week-dot.future { border-color: var(--border); opacity: 0.3; cursor: default; }
+
+    /* ── Monthly view ── */
+    .monthly-view { padding: 0 2px; }
+    .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .month-day-name { text-align: center; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); padding: 6px 0 8px; }
+
+    .month-cell { background: var(--surface); border-radius: var(--radius-sm); padding: 8px 7px; min-height: 68px; display: flex; flex-direction: column; gap: 5px; box-shadow: var(--shadow-sm); cursor: pointer; transition: background 0.15s; }
+    .month-cell:hover:not(.future):not(.out-of-month) { background: #f0efeb; }
+    .month-cell.out-of-month { background: transparent; box-shadow: none; cursor: default; }
+    .month-cell.future { opacity: 0.45; cursor: default; }
+    .month-cell.is-today { outline: 2.5px solid var(--text); outline-offset: -2.5px; }
+
+    .month-date-num { font-size: 12px; font-weight: 700; line-height: 1; }
+    .out-of-month .month-date-num { color: var(--text-light); }
+    .today-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: var(--text); color: #fff; font-size: 10px; }
+
+    .month-dots { display: flex; flex-wrap: wrap; gap: 3px; }
+    .month-dot { display: block; width: 6px; height: 6px; border-radius: 50%; }
+    .month-dot-overflow { font-size: 9px; color: var(--text-muted); font-weight: 700; }
+
+    .month-bar-wrap { height: 3px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: auto; }
+    .month-bar { height: 100%; background: var(--text); border-radius: 3px; transition: width 0.4s ease; }
+
+    /* ── FAB ── */
+    .fab { position: fixed; bottom: 28px; right: 28px; width: 56px; height: 56px; border-radius: 50%; background: var(--text); color: #fff; border: none; font-size: 30px; line-height: 1; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.22); transition: transform 0.2s, box-shadow 0.2s; z-index: 50; }
+    .fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(0,0,0,0.28); }
+    @media (min-width: 540px) { .fab { right: calc(50% - 212px); } }
+
+    /* ── Modal ── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.38); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); display: flex; align-items: flex-end; justify-content: center; z-index: 100; }
+    @media (min-width: 480px) { .modal-overlay { align-items: center; } }
+
+    .modal { background: var(--surface); border-radius: var(--radius) var(--radius) 0 0; padding: 26px 22px 36px; width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; animation: slideUp 0.24s cubic-bezier(0.32, 0.72, 0, 1); }
+    @media (min-width: 480px) { .modal { border-radius: var(--radius); max-height: 90vh; } }
+    @keyframes slideUp { from { transform: translateY(36px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .modal-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+    .modal-header h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; }
+    .modal-date { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+    .modal-close { background: var(--bg); border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 20px; line-height: 1; color: var(--text-muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+    .modal-close:hover { background: var(--border); color: var(--text); }
+
+    /* ── Add hobby form ── */
+    .hobby-preview { background: var(--bg); border-radius: var(--radius-sm); padding: 14px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .preview-emoji { font-size: 30px; line-height: 1; }
+    .preview-name { font-size: 18px; font-weight: 700; color: var(--text); }
+
+    .form-label { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); margin-bottom: 10px; margin-top: 20px; }
+
+    .form-input { width: 100%; background: var(--bg); border: 2px solid transparent; border-radius: var(--radius-sm); padding: 13px 16px; font-size: 16px; color: var(--text); outline: none; transition: border-color 0.15s; font-family: inherit; }
+    .form-input:focus { border-color: var(--text); }
+    .form-input::placeholder { color: var(--text-light); }
+
+    .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; }
+    .emoji-btn { background: var(--bg); border: 2px solid transparent; border-radius: 10px; padding: 7px 4px; font-size: 19px; display: flex; align-items: center; justify-content: center; aspect-ratio: 1; transition: all 0.15s; }
+    .emoji-btn:hover { background: var(--border); transform: scale(1.1); }
+    .emoji-btn.selected { border-color: var(--text); background: #fff; }
+
+    .color-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+    .color-btn { width: 36px; height: 36px; border-radius: 50%; border: none; outline: 3px solid transparent; outline-offset: 3px; transition: all 0.15s; }
+    .color-btn:hover { transform: scale(1.18); }
+    .color-btn.selected { outline-color: var(--text); }
+
+    /* ── Buttons ── */
+    .btn-primary { width: 100%; background: var(--text); color: #fff; border: none; padding: 16px; border-radius: var(--radius-sm); font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 24px; transition: opacity 0.15s, transform 0.15s; font-family: inherit; }
+    .btn-primary:not([disabled]):hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-primary[disabled] { opacity: 0.35; cursor: default; }
+
+    .btn-secondary { flex: 1; background: var(--bg); color: var(--text); border: none; padding: 15px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; transition: background 0.15s; font-family: inherit; }
+    .btn-secondary:hover { background: var(--border); }
+
+    .note-textarea { width: 100%; background: var(--bg); border: 2px solid transparent; border-radius: var(--radius-sm); padding: 14px 16px; font-size: 15px; line-height: 1.6; color: var(--text); outline: none; resize: none; transition: border-color 0.15s; font-family: inherit; }
+    .note-textarea:focus { border-color: var(--text); }
+    .note-textarea::placeholder { color: var(--text-light); }
+
+    .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .modal-actions .btn-primary { flex: 2; margin-top: 0; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import { h, render } from 'https://esm.sh/preact@10.23.1';
+    import { useState, useEffect, useCallback, useRef } from 'https://esm.sh/preact@10.23.1/hooks';
+    import htm from 'https://esm.sh/htm@3.1.1';
+
+    const html = htm.bind(h);
+
+    // ─── Constants ────────────────────────────────────────────
+
+    const COLORS = [
+      '#FF6B6B', '#FF9A3C', '#FFD166', '#06D6A0',
+      '#4CC9F0', '#7B2FBE', '#F72585', '#118AB2',
+      '#95D5B2', '#E9C46A',
+    ];
+
+    const EMOJIS = [
+      '📚','🎵','🎨','✍️','🧘','🏃','🚴','🏊',
+      '🎮','🌱','🍳','🧩','📸','✈️','🎭','🏋️',
+      '🎯','🌙','☀️','💪','🎸','🎹','🖊️','🧶',
+      '🪴','🐾','🎲','📝','🔮','🌊','🧁','🎬',
+      '🎤','🏄','🧗','⚽','🎾','🎻','🦋','🌸',
+    ];
+
+    // ─── Utils ────────────────────────────────────────────────
+
+    function fmtDate(date) {
+      const d = date instanceof Date ? date : new Date(date);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${dd}`;
+    }
+
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2);
+    }
+
+    function getWeekDays(dateStr) {
+      const d = new Date(dateStr + 'T12:00:00');
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      d.setDate(d.getDate() + diff);
+      return Array.from({ length: 7 }, (_, i) => {
+        const dd = new Date(d);
+        dd.setDate(d.getDate() + i);
+        return dd;
+      });
+    }
+
+    function getMonthCells(dateStr) {
+      const d = new Date(dateStr + 'T12:00:00');
+      const year = d.getFullYear();
+      const month = d.getMonth();
+      const firstDay = new Date(year, month, 1).getDay();
+      const offset = firstDay === 0 ? 6 : firstDay - 1;
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const cells = [];
+      for (let i = 1 - offset; i <= daysInMonth; i++) {
+        cells.push({ date: new Date(year, month, i), inMonth: i >= 1 });
+      }
+      while (cells.length % 7 !== 0) {
+        const last = cells[cells.length - 1].date;
+        cells.push({ date: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1), inMonth: false });
+      }
+      return cells;
+    }
+
+    // ─── Store ────────────────────────────────────────────────
+
+    const LS_HOBBIES = 'ht_hobbies';
+    const LS_LOGS    = 'ht_logs';
+
+    function useStore() {
+      const [hobbies, setHobbies] = useState(() => {
+        try { return JSON.parse(localStorage.getItem(LS_HOBBIES)) || []; }
+        catch { return []; }
+      });
+      const [logs, setLogs] = useState(() => {
+        try { return JSON.parse(localStorage.getItem(LS_LOGS)) || {}; }
+        catch { return {}; }
+      });
+
+      useEffect(() => { localStorage.setItem(LS_HOBBIES, JSON.stringify(hobbies)); }, [hobbies]);
+      useEffect(() => { localStorage.setItem(LS_LOGS,    JSON.stringify(logs));    }, [logs]);
+
+      const addHobby = useCallback(({ name, emoji, color }) => {
+        setHobbies(p => [...p, { id: uid(), name, emoji, color, createdAt: fmtDate(new Date()) }]);
+      }, []);
+
+      const removeHobby = useCallback(id => {
+        setHobbies(p => p.filter(h => h.id !== id));
+      }, []);
+
+      const toggle = useCallback((hobbyId, dateStr) => {
+        setLogs(p => ({
+          ...p,
+          [dateStr]: {
+            ...p[dateStr],
+            [hobbyId]: { ...p[dateStr]?.[hobbyId], completed: !p[dateStr]?.[hobbyId]?.completed },
+          },
+        }));
+      }, []);
+
+      const saveNote = useCallback((hobbyId, dateStr, note) => {
+        setLogs(p => ({
+          ...p,
+          [dateStr]: { ...p[dateStr], [hobbyId]: { ...p[dateStr]?.[hobbyId], note } },
+        }));
+      }, []);
+
+      const getStreak = useCallback(hobbyId => {
+        const today = new Date(); today.setHours(0,0,0,0);
+        let d = new Date(today);
+        if (!logs[fmtDate(today)]?.[hobbyId]?.completed) d.setDate(d.getDate() - 1);
+        let count = 0;
+        while (count < 3650) {
+          if (logs[fmtDate(d)]?.[hobbyId]?.completed) { count++; d.setDate(d.getDate() - 1); }
+          else break;
+        }
+        return count;
+      }, [logs]);
+
+      const done    = useCallback((hid, ds) => !!logs[ds]?.[hid]?.completed, [logs]);
+      const getNote = useCallback((hid, ds) => logs[ds]?.[hid]?.note || '', [logs]);
+
+      return { hobbies, addHobby, removeHobby, toggle, saveNote, getStreak, done, getNote };
+    }
+
+    // ─── DailyView ────────────────────────────────────────────
+
+    function DailyView({ hobbies, date, done, toggle, getStreak, getNote, onNoteClick, onDeleteHobby }) {
+      const [hoveredId, setHoveredId] = useState(null);
+
+      if (!hobbies.length) return html`
+        <div class="empty-state">
+          <span class="empty-icon">🌱</span>
+          <h2>No hobbies yet</h2>
+          <p>Tap + below to add your first hobby and start tracking</p>
+        </div>`;
+
+      const isFuture = date > fmtDate(new Date());
+
+      return html`<div class="daily-list">
+        ${hobbies.map(hobby => {
+          const completed = done(hobby.id, date);
+          const streak    = getStreak(hobby.id);
+          const hasNote   = !!getNote(hobby.id, date);
+          return html`
+            <div key=${hobby.id}
+              class=${'hobby-row' + (completed ? ' completed' : '')}
+              onMouseEnter=${() => setHoveredId(hobby.id)}
+              onMouseLeave=${() => setHoveredId(null)}
+            >
+              <button
+                class="check-btn"
+                style=${{ '--color': hobby.color }}
+                onClick=${() => !isFuture && toggle(hobby.id, date)}
+                disabled=${isFuture}
+              >
+                ${completed ? html`<span class="check-icon">✓</span>` : null}
+              </button>
+              <span class="hobby-emoji">${hobby.emoji}</span>
+              <span class="hobby-name">${hobby.name}</span>
+              <div class="hobby-meta">
+                ${streak > 0 ? html`<span class="streak-badge">🔥 ${streak}</span>` : null}
+                <button
+                  class=${'note-btn' + (hasNote ? ' has-note' : '')}
+                  onClick=${() => onNoteClick(hobby.id)}
+                  title=${hasNote ? 'View / edit note' : 'Add note'}
+                >${hasNote ? '📝' : '✏️'}</button>
+                ${hoveredId === hobby.id ? html`
+                  <button class="delete-btn" title="Delete hobby"
+                    onClick=${() => window.confirm('Delete "' + hobby.name + '"? All logs will be lost.') && onDeleteHobby(hobby.id)}
+                  >×</button>` : null}
+              </div>
+            </div>`;
+        })}
+      </div>`;
+    }
+
+    // ─── WeeklyView ───────────────────────────────────────────
+
+    function WeeklyView({ hobbies, date, done, toggle, onDayClick }) {
+      const days = getWeekDays(date);
+      const todayStr = fmtDate(new Date());
+      const today = new Date(); today.setHours(0,0,0,0);
+
+      if (!hobbies.length) return html`
+        <div class="empty-state">
+          <span class="empty-icon">🌱</span>
+          <h2>No hobbies yet</h2>
+          <p>Tap + below to add your first hobby and start tracking</p>
+        </div>`;
+
+      return html`<div class="weekly-view">
+        <div class="week-grid week-grid-header">
+          <div class="week-label-col"></div>
+          ${days.map(d => {
+            const isToday = d.getTime() === today.getTime();
+            const ds = fmtDate(d);
+            return html`<div key=${ds} class=${'week-day-header' + (isToday ? ' today' : '')}>
+              <span class="day-abbr">${d.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+              <button class=${'day-num-btn' + (isToday ? ' today' : '')} onClick=${() => onDayClick(ds)}>
+                ${d.getDate()}
+              </button>
+            </div>`;
+          })}
+        </div>
+        ${hobbies.map(hobby => html`
+          <div key=${hobby.id} class="week-hobby-row">
+            <div class="week-hobby-label">
+              <span class="week-hobby-emoji">${hobby.emoji}</span>
+              <span class="week-hobby-name">${hobby.name}</span>
+            </div>
+            ${days.map(d => {
+              const ds = fmtDate(d);
+              const completed = done(hobby.id, ds);
+              const isFuture  = fmtDate(d) > todayStr;
+              return html`<div key=${ds} class="week-cell">
+                <button
+                  class=${'week-dot' + (completed ? ' done' : '') + (isFuture ? ' future' : '')}
+                  style=${{ '--color': hobby.color }}
+                  onClick=${() => !isFuture && toggle(hobby.id, ds)}
+                  disabled=${isFuture}
+                />
+              </div>`;
+            })}
+          </div>`)}
+      </div>`;
+    }
+
+    // ─── MonthlyView ──────────────────────────────────────────
+
+    function MonthlyView({ hobbies, date, done, onDayClick }) {
+      const cells = getMonthCells(date);
+      const todayStr = fmtDate(new Date());
+      const DAY_NAMES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+      return html`<div class="monthly-view">
+        <div class="month-grid">
+          ${DAY_NAMES.map(n => html`<div key=${n} class="month-day-name">${n}</div>`)}
+          ${cells.map(({ date: d, inMonth }, i) => {
+            const ds = fmtDate(d);
+            const isToday  = ds === todayStr;
+            const isFuture = ds > todayStr;
+            const completed = hobbies.filter(h => done(h.id, ds));
+            const count = completed.length;
+            const total = hobbies.length;
+            const cls = ['month-cell', !inMonth && 'out-of-month', isToday && 'is-today', isFuture && 'future'].filter(Boolean).join(' ');
+
+            return html`<div key=${i} class=${cls}
+              onClick=${() => inMonth && !isFuture && onDayClick(ds)}
+            >
+              <span class=${'month-date-num' + (isToday ? ' today-num' : '')}>${d.getDate()}</span>
+              ${inMonth && !isFuture && count > 0 ? html`<div class="month-dots">
+                ${completed.slice(0, 5).map(h => html`<span key=${h.id} class="month-dot" style=${{ backgroundColor: h.color }} />`)}
+                ${count > 5 ? html`<span class="month-dot-overflow">+${count - 5}</span>` : null}
+              </div>` : null}
+              ${inMonth && !isFuture && total > 0 ? html`
+                <div class="month-bar-wrap">
+                  <div class="month-bar" style=${{ width: ((count / total) * 100) + '%' }} />
+                </div>` : null}
+            </div>`;
+          })}
+        </div>
+      </div>`;
+    }
+
+    // ─── AddHobbyModal ────────────────────────────────────────
+
+    function AddHobbyModal({ onAdd, onClose }) {
+      const [name,  setName]  = useState('');
+      const [emoji, setEmoji] = useState('📚');
+      const [color, setColor] = useState(COLORS[0]);
+      const inputRef = useRef(null);
+      useEffect(() => { inputRef.current?.focus(); }, []);
+
+      function handleSubmit(e) {
+        e.preventDefault();
+        if (!name.trim()) return;
+        onAdd({ name: name.trim(), emoji, color });
+      }
+
+      return html`
+        <div class="modal-overlay" onClick=${onClose}>
+          <div class="modal" onClick=${e => e.stopPropagation()}>
+            <div class="modal-header">
+              <h2>New Hobby</h2>
+              <button class="modal-close" onClick=${onClose}>×</button>
+            </div>
+
+            <div class="hobby-preview" style=${{ borderLeft: '4px solid ' + color }}>
+              <span class="preview-emoji">${emoji}</span>
+              <span class="preview-name">${name || 'Your hobby name'}</span>
+            </div>
+
+            <form onSubmit=${handleSubmit}>
+              <label class="form-label">Name</label>
+              <input ref=${inputRef} class="form-input" type="text"
+                placeholder="Reading, Running, Guitar…"
+                value=${name} onInput=${e => setName(e.target.value)} maxLength="40"
+              />
+
+              <label class="form-label">Icon</label>
+              <div class="emoji-grid">
+                ${EMOJIS.map(e => html`
+                  <button key=${e} type="button"
+                    class=${'emoji-btn' + (emoji === e ? ' selected' : '')}
+                    onClick=${() => setEmoji(e)}
+                  >${e}</button>`)}
+              </div>
+
+              <label class="form-label">Color</label>
+              <div class="color-grid">
+                ${COLORS.map(c => html`
+                  <button key=${c} type="button"
+                    class=${'color-btn' + (color === c ? ' selected' : '')}
+                    style=${{ backgroundColor: c }}
+                    onClick=${() => setColor(c)}
+                  />`)}
+              </div>
+
+              <button type="submit" class="btn-primary" disabled=${!name.trim()}>
+                Add Hobby
+              </button>
+            </form>
+          </div>
+        </div>`;
+    }
+
+    // ─── NoteModal ────────────────────────────────────────────
+
+    function NoteModal({ hobby, dateStr, initialNote, onSave, onClose }) {
+      const [text, setText] = useState(initialNote);
+      const ref = useRef(null);
+      useEffect(() => { ref.current?.focus(); }, []);
+
+      const displayDate = new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', {
+        weekday: 'long', month: 'long', day: 'numeric',
+      });
+
+      return html`
+        <div class="modal-overlay" onClick=${onClose}>
+          <div class="modal" onClick=${e => e.stopPropagation()}>
+            <div class="modal-header">
+              <div>
+                <h2>${hobby?.emoji} ${hobby?.name}</h2>
+                <p class="modal-date">${displayDate}</p>
+              </div>
+              <button class="modal-close" onClick=${onClose}>×</button>
+            </div>
+            <textarea ref=${ref} class="note-textarea" rows="6"
+              placeholder="How did it go? Any progress, thoughts, feelings…"
+              value=${text} onInput=${e => setText(e.target.value)}
+            />
+            <div class="modal-actions">
+              <button class="btn-secondary" onClick=${onClose}>Cancel</button>
+              <button class="btn-primary" onClick=${() => onSave(text)}>Save Note</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // ─── App ──────────────────────────────────────────────────
+
+    const VIEWS       = ['daily', 'weekly', 'monthly'];
+    const VIEW_LABELS = { daily: 'Day', weekly: 'Week', monthly: 'Month' };
+
+    function headerDate(dateStr, view) {
+      const d = new Date(dateStr + 'T12:00:00');
+      if (view === 'daily') {
+        const today = fmtDate(new Date());
+        const yest  = fmtDate(new Date(Date.now() - 86400000));
+        if (dateStr === today) return 'Today';
+        if (dateStr === yest)  return 'Yesterday';
+        return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+      }
+      if (view === 'weekly') {
+        const day  = d.getDay();
+        const diff = day === 0 ? -6 : 1 - day;
+        const s = new Date(d); s.setDate(d.getDate() + diff);
+        const e = new Date(s); e.setDate(s.getDate() + 6);
+        return s.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' – ' +
+               e.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+      return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+
+    function navDate(dateStr, view, dir) {
+      const d = new Date(dateStr + 'T12:00:00');
+      if (view === 'daily')   d.setDate(d.getDate() + dir);
+      else if (view === 'weekly') d.setDate(d.getDate() + dir * 7);
+      else d.setMonth(d.getMonth() + dir);
+      return fmtDate(d);
+    }
+
+    function App() {
+      const store = useStore();
+      const [view, setView]         = useState('daily');
+      const [date, setDate]         = useState(fmtDate(new Date()));
+      const [showAdd, setShowAdd]   = useState(false);
+      const [noteModal, setNoteModal] = useState(null);
+
+      const today   = fmtDate(new Date());
+      const isToday = date === today;
+
+      const goToDay = d => { setDate(d); setView('daily'); };
+
+      return html`<div class="app">
+        <header class="header">
+          <div class="header-top">
+            <h1 class="app-title">Hobbies</h1>
+            <div class="view-tabs">
+              ${VIEWS.map(v => html`
+                <button key=${v} class=${'view-tab' + (view === v ? ' active' : '')} onClick=${() => setView(v)}>
+                  ${VIEW_LABELS[v]}
+                </button>`)}
+            </div>
+          </div>
+          <div class="date-nav">
+            <button class="nav-btn" onClick=${() => setDate(navDate(date, view, -1))}>‹</button>
+            <div class="date-display">
+              <span class="date-text">${headerDate(date, view)}</span>
+              ${!isToday ? html`<button class="today-pill" onClick=${() => setDate(today)}>Back to today</button>` : null}
+            </div>
+            <button class="nav-btn" onClick=${() => setDate(navDate(date, view, 1))}>›</button>
+          </div>
+        </header>
+
+        <main class="main">
+          ${view === 'daily' ? html`<${DailyView}
+            hobbies=${store.hobbies} date=${date} done=${store.done}
+            toggle=${store.toggle} getStreak=${store.getStreak} getNote=${store.getNote}
+            onNoteClick=${id => setNoteModal({ hobbyId: id, dateStr: date })}
+            onDeleteHobby=${store.removeHobby}
+          />` : view === 'weekly' ? html`<${WeeklyView}
+            hobbies=${store.hobbies} date=${date} done=${store.done}
+            toggle=${store.toggle} onDayClick=${goToDay}
+          />` : html`<${MonthlyView}
+            hobbies=${store.hobbies} date=${date} done=${store.done} onDayClick=${goToDay}
+          />`}
+        </main>
+
+        <button class="fab" onClick=${() => setShowAdd(true)} title="Add hobby">+</button>
+
+        ${showAdd ? html`<${AddHobbyModal}
+          onAdd=${data => { store.addHobby(data); setShowAdd(false); }}
+          onClose=${() => setShowAdd(false)}
+        />` : null}
+
+        ${noteModal ? html`<${NoteModal}
+          hobby=${store.hobbies.find(h => h.id === noteModal.hobbyId)}
+          dateStr=${noteModal.dateStr}
+          initialNote=${store.getNote(noteModal.hobbyId, noteModal.dateStr)}
+          onSave=${note => { store.saveNote(noteModal.hobbyId, noteModal.dateStr, note); setNoteModal(null); }}
+          onClose=${() => setNoteModal(null)}
+        />` : null}
+      </div>`;
+    }
+
+    render(html`<${App} />`, document.getElementById('root'));
+  </script>
+</body>
+</html>
