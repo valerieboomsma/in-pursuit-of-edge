@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hobby Tracker 🌱</title>
+  <title>Habit Tracker 🌱</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -64,7 +64,7 @@
     /* ── Daily view ── */
     .daily-list { display: flex; flex-direction: column; gap: 10px; }
 
-    .hobby-row {
+    .habit-row {
       background: var(--surface);
       border-radius: var(--radius);
       padding: 16px 18px;
@@ -74,7 +74,7 @@
       box-shadow: var(--shadow-sm);
       transition: opacity 0.2s;
     }
-    .hobby-row.completed { opacity: 0.55; }
+    .habit-row.completed { opacity: 0.55; }
 
     .check-btn {
       width: 38px; height: 38px; border-radius: 50%;
@@ -89,11 +89,11 @@
 
     .check-icon { color: #fff; font-size: 17px; font-weight: 700; line-height: 1; }
 
-    .hobby-emoji { font-size: 22px; line-height: 1; flex-shrink: 0; }
-    .hobby-name { font-size: 16px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .completed .hobby-name { text-decoration: line-through; color: var(--text-muted); }
+    .habit-emoji { font-size: 22px; line-height: 1; flex-shrink: 0; }
+    .habit-name { font-size: 16px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .completed .habit-name { text-decoration: line-through; color: var(--text-muted); }
 
-    .hobby-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .habit-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
     .streak-badge { font-size: 12px; font-weight: 700; color: var(--text-muted); background: var(--bg); padding: 3px 8px; border-radius: 100px; white-space: nowrap; }
 
@@ -115,10 +115,10 @@
     .day-num-btn:hover { background: var(--border); }
     .day-num-btn.today { background: var(--text); color: #fff; }
 
-    .week-hobby-row { display: grid; grid-template-columns: 110px repeat(7, 1fr); gap: 4px; align-items: center; background: var(--surface); border-radius: var(--radius-sm); padding: 10px 8px; margin-bottom: 8px; box-shadow: var(--shadow-sm); }
-    .week-hobby-label { display: flex; align-items: center; gap: 7px; padding-left: 4px; }
-    .week-hobby-emoji { font-size: 17px; line-height: 1; }
-    .week-hobby-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .week-habit-row { display: grid; grid-template-columns: 110px repeat(7, 1fr); gap: 4px; align-items: center; background: var(--surface); border-radius: var(--radius-sm); padding: 10px 8px; margin-bottom: 8px; box-shadow: var(--shadow-sm); }
+    .week-habit-label { display: flex; align-items: center; gap: 7px; padding-left: 4px; }
+    .week-habit-emoji { font-size: 17px; line-height: 1; }
+    .week-habit-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .week-cell { display: flex; align-items: center; justify-content: center; }
     .week-dot { width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid var(--color, #ccc); background: none; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
     .week-dot:not(:disabled):hover { transform: scale(1.15); }
@@ -167,8 +167,8 @@
     .modal-close { background: var(--bg); border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 20px; line-height: 1; color: var(--text-muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
     .modal-close:hover { background: var(--border); color: var(--text); }
 
-    /* ── Add hobby form ── */
-    .hobby-preview { background: var(--bg); border-radius: var(--radius-sm); padding: 14px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    /* ── Add habit form ── */
+    .habit-preview { background: var(--bg); border-radius: var(--radius-sm); padding: 14px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
     .preview-emoji { font-size: 30px; line-height: 1; }
     .preview-name { font-size: 18px; font-weight: 700; color: var(--text); }
 
@@ -291,38 +291,38 @@
       useEffect(() => { localStorage.setItem(LS_HOBBIES, JSON.stringify(hobbies)); }, [hobbies]);
       useEffect(() => { localStorage.setItem(LS_LOGS,    JSON.stringify(logs));    }, [logs]);
 
-      const addHobby = useCallback(({ name, emoji, color }) => {
+      const addhabit = useCallback(({ name, emoji, color }) => {
         setHobbies(p => [...p, { id: uid(), name, emoji, color, createdAt: fmtDate(new Date()) }]);
       }, []);
 
-      const removeHobby = useCallback(id => {
+      const removehabit = useCallback(id => {
         setHobbies(p => p.filter(h => h.id !== id));
       }, []);
 
-      const toggle = useCallback((hobbyId, dateStr) => {
+      const toggle = useCallback((habitId, dateStr) => {
         setLogs(p => ({
           ...p,
           [dateStr]: {
             ...p[dateStr],
-            [hobbyId]: { ...p[dateStr]?.[hobbyId], completed: !p[dateStr]?.[hobbyId]?.completed },
+            [habitId]: { ...p[dateStr]?.[habitId], completed: !p[dateStr]?.[habitId]?.completed },
           },
         }));
       }, []);
 
-      const saveNote = useCallback((hobbyId, dateStr, note) => {
+      const saveNote = useCallback((habitId, dateStr, note) => {
         setLogs(p => ({
           ...p,
-          [dateStr]: { ...p[dateStr], [hobbyId]: { ...p[dateStr]?.[hobbyId], note } },
+          [dateStr]: { ...p[dateStr], [habitId]: { ...p[dateStr]?.[habitId], note } },
         }));
       }, []);
 
-      const getStreak = useCallback(hobbyId => {
+      const getStreak = useCallback(habitId => {
         const today = new Date(); today.setHours(0,0,0,0);
         let d = new Date(today);
-        if (!logs[fmtDate(today)]?.[hobbyId]?.completed) d.setDate(d.getDate() - 1);
+        if (!logs[fmtDate(today)]?.[habitId]?.completed) d.setDate(d.getDate() - 1);
         let count = 0;
         while (count < 3650) {
-          if (logs[fmtDate(d)]?.[hobbyId]?.completed) { count++; d.setDate(d.getDate() - 1); }
+          if (logs[fmtDate(d)]?.[habitId]?.completed) { count++; d.setDate(d.getDate() - 1); }
           else break;
         }
         return count;
@@ -331,54 +331,54 @@
       const done    = useCallback((hid, ds) => !!logs[ds]?.[hid]?.completed, [logs]);
       const getNote = useCallback((hid, ds) => logs[ds]?.[hid]?.note || '', [logs]);
 
-      return { hobbies, addHobby, removeHobby, toggle, saveNote, getStreak, done, getNote };
+      return { hobbies, addhabit, removehabit, toggle, saveNote, getStreak, done, getNote };
     }
 
     // ─── DailyView ────────────────────────────────────────────
 
-    function DailyView({ hobbies, date, done, toggle, getStreak, getNote, onNoteClick, onDeleteHobby }) {
+    function DailyView({ hobbies, date, done, toggle, getStreak, getNote, onNoteClick, onDeletehabit }) {
       const [hoveredId, setHoveredId] = useState(null);
 
       if (!hobbies.length) return html`
         <div class="empty-state">
           <span class="empty-icon">🌱</span>
           <h2>No hobbies yet</h2>
-          <p>Tap + below to add your first hobby and start tracking</p>
+          <p>Tap + below to add your first habit and start tracking</p>
         </div>`;
 
       const isFuture = date > fmtDate(new Date());
 
       return html`<div class="daily-list">
-        ${hobbies.map(hobby => {
-          const completed = done(hobby.id, date);
-          const streak    = getStreak(hobby.id);
-          const hasNote   = !!getNote(hobby.id, date);
+        ${hobbies.map(habit => {
+          const completed = done(habit.id, date);
+          const streak    = getStreak(habit.id);
+          const hasNote   = !!getNote(habit.id, date);
           return html`
-            <div key=${hobby.id}
-              class=${'hobby-row' + (completed ? ' completed' : '')}
-              onMouseEnter=${() => setHoveredId(hobby.id)}
+            <div key=${habit.id}
+              class=${'habit-row' + (completed ? ' completed' : '')}
+              onMouseEnter=${() => setHoveredId(habit.id)}
               onMouseLeave=${() => setHoveredId(null)}
             >
               <button
                 class="check-btn"
-                style=${{ '--color': hobby.color }}
-                onClick=${() => !isFuture && toggle(hobby.id, date)}
+                style=${{ '--color': habit.color }}
+                onClick=${() => !isFuture && toggle(habit.id, date)}
                 disabled=${isFuture}
               >
                 ${completed ? html`<span class="check-icon">✓</span>` : null}
               </button>
-              <span class="hobby-emoji">${hobby.emoji}</span>
-              <span class="hobby-name">${hobby.name}</span>
-              <div class="hobby-meta">
+              <span class="habit-emoji">${habit.emoji}</span>
+              <span class="habit-name">${habit.name}</span>
+              <div class="habit-meta">
                 ${streak > 0 ? html`<span class="streak-badge">🔥 ${streak}</span>` : null}
                 <button
                   class=${'note-btn' + (hasNote ? ' has-note' : '')}
-                  onClick=${() => onNoteClick(hobby.id)}
+                  onClick=${() => onNoteClick(habit.id)}
                   title=${hasNote ? 'View / edit note' : 'Add note'}
                 >${hasNote ? '📝' : '✏️'}</button>
-                ${hoveredId === hobby.id ? html`
-                  <button class="delete-btn" title="Delete hobby"
-                    onClick=${() => window.confirm('Delete "' + hobby.name + '"? All logs will be lost.') && onDeleteHobby(hobby.id)}
+                ${hoveredId === habit.id ? html`
+                  <button class="delete-btn" title="Delete habit"
+                    onClick=${() => window.confirm('Delete "' + habit.name + '"? All logs will be lost.') && onDeletehabit(habit.id)}
                   >×</button>` : null}
               </div>
             </div>`;
@@ -397,7 +397,7 @@
         <div class="empty-state">
           <span class="empty-icon">🌱</span>
           <h2>No hobbies yet</h2>
-          <p>Tap + below to add your first hobby and start tracking</p>
+          <p>Tap + below to add your first habit and start tracking</p>
         </div>`;
 
       return html`<div class="weekly-view">
@@ -414,21 +414,21 @@
             </div>`;
           })}
         </div>
-        ${hobbies.map(hobby => html`
-          <div key=${hobby.id} class="week-hobby-row">
-            <div class="week-hobby-label">
-              <span class="week-hobby-emoji">${hobby.emoji}</span>
-              <span class="week-hobby-name">${hobby.name}</span>
+        ${hobbies.map(habit => html`
+          <div key=${habit.id} class="week-habit-row">
+            <div class="week-habit-label">
+              <span class="week-habit-emoji">${habit.emoji}</span>
+              <span class="week-habit-name">${habit.name}</span>
             </div>
             ${days.map(d => {
               const ds = fmtDate(d);
-              const completed = done(hobby.id, ds);
+              const completed = done(habit.id, ds);
               const isFuture  = fmtDate(d) > todayStr;
               return html`<div key=${ds} class="week-cell">
                 <button
                   class=${'week-dot' + (completed ? ' done' : '') + (isFuture ? ' future' : '')}
-                  style=${{ '--color': hobby.color }}
-                  onClick=${() => !isFuture && toggle(hobby.id, ds)}
+                  style=${{ '--color': habit.color }}
+                  onClick=${() => !isFuture && toggle(habit.id, ds)}
                   disabled=${isFuture}
                 />
               </div>`;
@@ -474,9 +474,9 @@
       </div>`;
     }
 
-    // ─── AddHobbyModal ────────────────────────────────────────
+    // ─── AddhabitModal ────────────────────────────────────────
 
-    function AddHobbyModal({ onAdd, onClose }) {
+    function AddhabitModal({ onAdd, onClose }) {
       const [name,  setName]  = useState('');
       const [emoji, setEmoji] = useState('📚');
       const [color, setColor] = useState(COLORS[0]);
@@ -493,13 +493,13 @@
         <div class="modal-overlay" onClick=${onClose}>
           <div class="modal" onClick=${e => e.stopPropagation()}>
             <div class="modal-header">
-              <h2>New Hobby</h2>
+              <h2>New habit</h2>
               <button class="modal-close" onClick=${onClose}>×</button>
             </div>
 
-            <div class="hobby-preview" style=${{ borderLeft: '4px solid ' + color }}>
+            <div class="habit-preview" style=${{ borderLeft: '4px solid ' + color }}>
               <span class="preview-emoji">${emoji}</span>
-              <span class="preview-name">${name || 'Your hobby name'}</span>
+              <span class="preview-name">${name || 'Your habit name'}</span>
             </div>
 
             <form onSubmit=${handleSubmit}>
@@ -529,7 +529,7 @@
               </div>
 
               <button type="submit" class="btn-primary" disabled=${!name.trim()}>
-                Add Hobby
+                Add habit
               </button>
             </form>
           </div>
@@ -538,7 +538,7 @@
 
     // ─── NoteModal ────────────────────────────────────────────
 
-    function NoteModal({ hobby, dateStr, initialNote, onSave, onClose }) {
+    function NoteModal({ habit, dateStr, initialNote, onSave, onClose }) {
       const [text, setText] = useState(initialNote);
       const ref = useRef(null);
       useEffect(() => { ref.current?.focus(); }, []);
@@ -552,7 +552,7 @@
           <div class="modal" onClick=${e => e.stopPropagation()}>
             <div class="modal-header">
               <div>
-                <h2>${hobby?.emoji} ${hobby?.name}</h2>
+                <h2>${habit?.emoji} ${habit?.name}</h2>
                 <p class="modal-date">${displayDate}</p>
               </div>
               <button class="modal-close" onClick=${onClose}>×</button>
@@ -639,8 +639,8 @@
           ${view === 'daily' ? html`<${DailyView}
             hobbies=${store.hobbies} date=${date} done=${store.done}
             toggle=${store.toggle} getStreak=${store.getStreak} getNote=${store.getNote}
-            onNoteClick=${id => setNoteModal({ hobbyId: id, dateStr: date })}
-            onDeleteHobby=${store.removeHobby}
+            onNoteClick=${id => setNoteModal({ habitId: id, dateStr: date })}
+            onDeletehabit=${store.removehabit}
           />` : view === 'weekly' ? html`<${WeeklyView}
             hobbies=${store.hobbies} date=${date} done=${store.done}
             toggle=${store.toggle} onDayClick=${goToDay}
@@ -649,18 +649,18 @@
           />`}
         </main>
 
-        <button class="fab" onClick=${() => setShowAdd(true)} title="Add hobby">+</button>
+        <button class="fab" onClick=${() => setShowAdd(true)} title="Add habit">+</button>
 
-        ${showAdd ? html`<${AddHobbyModal}
-          onAdd=${data => { store.addHobby(data); setShowAdd(false); }}
+        ${showAdd ? html`<${AddhabitModal}
+          onAdd=${data => { store.addhabit(data); setShowAdd(false); }}
           onClose=${() => setShowAdd(false)}
         />` : null}
 
         ${noteModal ? html`<${NoteModal}
-          hobby=${store.hobbies.find(h => h.id === noteModal.hobbyId)}
+          habit=${store.hobbies.find(h => h.id === noteModal.habitId)}
           dateStr=${noteModal.dateStr}
-          initialNote=${store.getNote(noteModal.hobbyId, noteModal.dateStr)}
-          onSave=${note => { store.saveNote(noteModal.hobbyId, noteModal.dateStr, note); setNoteModal(null); }}
+          initialNote=${store.getNote(noteModal.habitId, noteModal.dateStr)}
+          onSave=${note => { store.saveNote(noteModal.habitId, noteModal.dateStr, note); setNoteModal(null); }}
           onClose=${() => setNoteModal(null)}
         />` : null}
       </div>`;
