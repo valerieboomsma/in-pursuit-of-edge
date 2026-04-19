@@ -275,12 +275,12 @@
 
     // ─── Store ────────────────────────────────────────────────
 
-    const LS_HOBBIES = 'ht_hobbies';
+    const LS_habits = 'ht_habits';
     const LS_LOGS    = 'ht_logs';
 
     function useStore() {
-      const [hobbies, setHobbies] = useState(() => {
-        try { return JSON.parse(localStorage.getItem(LS_HOBBIES)) || []; }
+      const [habits, sethabits] = useState(() => {
+        try { return JSON.parse(localStorage.getItem(LS_habits)) || []; }
         catch { return []; }
       });
       const [logs, setLogs] = useState(() => {
@@ -288,15 +288,15 @@
         catch { return {}; }
       });
 
-      useEffect(() => { localStorage.setItem(LS_HOBBIES, JSON.stringify(hobbies)); }, [hobbies]);
+      useEffect(() => { localStorage.setItem(LS_habits, JSON.stringify(habits)); }, [habits]);
       useEffect(() => { localStorage.setItem(LS_LOGS,    JSON.stringify(logs));    }, [logs]);
 
       const addhabit = useCallback(({ name, emoji, color }) => {
-        setHobbies(p => [...p, { id: uid(), name, emoji, color, createdAt: fmtDate(new Date()) }]);
+        sethabits(p => [...p, { id: uid(), name, emoji, color, createdAt: fmtDate(new Date()) }]);
       }, []);
 
       const removehabit = useCallback(id => {
-        setHobbies(p => p.filter(h => h.id !== id));
+        sethabits(p => p.filter(h => h.id !== id));
       }, []);
 
       const toggle = useCallback((habitId, dateStr) => {
@@ -331,25 +331,25 @@
       const done    = useCallback((hid, ds) => !!logs[ds]?.[hid]?.completed, [logs]);
       const getNote = useCallback((hid, ds) => logs[ds]?.[hid]?.note || '', [logs]);
 
-      return { hobbies, addhabit, removehabit, toggle, saveNote, getStreak, done, getNote };
+      return { habits, addhabit, removehabit, toggle, saveNote, getStreak, done, getNote };
     }
 
     // ─── DailyView ────────────────────────────────────────────
 
-    function DailyView({ hobbies, date, done, toggle, getStreak, getNote, onNoteClick, onDeletehabit }) {
+    function DailyView({ habits, date, done, toggle, getStreak, getNote, onNoteClick, onDeletehabit }) {
       const [hoveredId, setHoveredId] = useState(null);
 
-      if (!hobbies.length) return html`
+      if (!habits.length) return html`
         <div class="empty-state">
           <span class="empty-icon">🌱</span>
-          <h2>No hobbies yet</h2>
+          <h2>No habits yet</h2>
           <p>Tap + below to add your first habit and start tracking</p>
         </div>`;
 
       const isFuture = date > fmtDate(new Date());
 
       return html`<div class="daily-list">
-        ${hobbies.map(habit => {
+        ${habits.map(habit => {
           const completed = done(habit.id, date);
           const streak    = getStreak(habit.id);
           const hasNote   = !!getNote(habit.id, date);
@@ -388,15 +388,15 @@
 
     // ─── WeeklyView ───────────────────────────────────────────
 
-    function WeeklyView({ hobbies, date, done, toggle, onDayClick }) {
+    function WeeklyView({ habits, date, done, toggle, onDayClick }) {
       const days = getWeekDays(date);
       const todayStr = fmtDate(new Date());
       const today = new Date(); today.setHours(0,0,0,0);
 
-      if (!hobbies.length) return html`
+      if (!habits.length) return html`
         <div class="empty-state">
           <span class="empty-icon">🌱</span>
-          <h2>No hobbies yet</h2>
+          <h2>No habits yet</h2>
           <p>Tap + below to add your first habit and start tracking</p>
         </div>`;
 
@@ -414,7 +414,7 @@
             </div>`;
           })}
         </div>
-        ${hobbies.map(habit => html`
+        ${habits.map(habit => html`
           <div key=${habit.id} class="week-habit-row">
             <div class="week-habit-label">
               <span class="week-habit-emoji">${habit.emoji}</span>
@@ -439,7 +439,7 @@
 
     // ─── MonthlyView ──────────────────────────────────────────
 
-    function MonthlyView({ hobbies, date, done, onDayClick }) {
+    function MonthlyView({ habits, date, done, onDayClick }) {
       const cells = getMonthCells(date);
       const todayStr = fmtDate(new Date());
       const DAY_NAMES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -451,9 +451,9 @@
             const ds = fmtDate(d);
             const isToday  = ds === todayStr;
             const isFuture = ds > todayStr;
-            const completed = hobbies.filter(h => done(h.id, ds));
+            const completed = habits.filter(h => done(h.id, ds));
             const count = completed.length;
-            const total = hobbies.length;
+            const total = habits.length;
             const cls = ['month-cell', !inMonth && 'out-of-month', isToday && 'is-today', isFuture && 'future'].filter(Boolean).join(' ');
 
             return html`<div key=${i} class=${cls}
@@ -617,7 +617,7 @@
       return html`<div class="app">
         <header class="header">
           <div class="header-top">
-            <h1 class="app-title">Hobbies</h1>
+            <h1 class="app-title">habits</h1>
             <div class="view-tabs">
               ${VIEWS.map(v => html`
                 <button key=${v} class=${'view-tab' + (view === v ? ' active' : '')} onClick=${() => setView(v)}>
@@ -637,15 +637,15 @@
 
         <main class="main">
           ${view === 'daily' ? html`<${DailyView}
-            hobbies=${store.hobbies} date=${date} done=${store.done}
+            habits=${store.habits} date=${date} done=${store.done}
             toggle=${store.toggle} getStreak=${store.getStreak} getNote=${store.getNote}
             onNoteClick=${id => setNoteModal({ habitId: id, dateStr: date })}
             onDeletehabit=${store.removehabit}
           />` : view === 'weekly' ? html`<${WeeklyView}
-            hobbies=${store.hobbies} date=${date} done=${store.done}
+            habits=${store.habits} date=${date} done=${store.done}
             toggle=${store.toggle} onDayClick=${goToDay}
           />` : html`<${MonthlyView}
-            hobbies=${store.hobbies} date=${date} done=${store.done} onDayClick=${goToDay}
+            habits=${store.habits} date=${date} done=${store.done} onDayClick=${goToDay}
           />`}
         </main>
 
@@ -657,7 +657,7 @@
         />` : null}
 
         ${noteModal ? html`<${NoteModal}
-          habit=${store.hobbies.find(h => h.id === noteModal.habitId)}
+          habit=${store.habits.find(h => h.id === noteModal.habitId)}
           dateStr=${noteModal.dateStr}
           initialNote=${store.getNote(noteModal.habitId, noteModal.dateStr)}
           onSave=${note => { store.saveNote(noteModal.habitId, noteModal.dateStr, note); setNoteModal(null); }}
